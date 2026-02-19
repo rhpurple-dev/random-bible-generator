@@ -34,13 +34,7 @@
         <option value="NASB">NASB</option>
         <option value="NLT">NLT</option>
       </select>
-
-      <label for="mode" style="margin-left: 8px;"><strong>Mode</strong></label>
-      <select id="mode">
-        <option value="chapter" selected>Random chapter</option>
-        <option value="verse">Random verse (requires your verse list)</option>
-      </select>
-    </div>
+</div>
 
     <div class="title" id="displayTitle">Loading…</div>
     <div>
@@ -111,24 +105,14 @@
       }
     }
 
-    document.getElementById("newBtn").addEventListener("click", () => {
-      const mode = document.getElementById("mode").value;
-      if (mode !== "chapter") {
-        setStatus("This demo is wired for chapters. To use verses, add verses.json and update the loader.");
-        return;
-      }
-      pickRandomChapter();
-    });
+    document.getElementById("newBtn").addEventListener("click", pickRandomChapter);
+});
 
     document.getElementById("copyBtn").addEventListener("click", copyLink);
     document.getElementById("openBtn").addEventListener("click", openLink);
     document.getElementById("version").addEventListener("change", renderCurrent);
 
-    document.getElementById("mode").addEventListener("change", () => {
-      const mode = document.getElementById("mode").value;
-      if (mode === "chapter") {
-        pickRandomChapter();
-      } else {
+    } else {
         document.getElementById("displayTitle").textContent = "Random verse mode not configured";
         document.getElementById("displayLink").textContent = "";
         document.getElementById("displayLink").href = "#";
