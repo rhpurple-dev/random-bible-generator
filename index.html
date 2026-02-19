@@ -34,7 +34,8 @@
         <option value="NASB">NASB</option>
         <option value="NLT">NLT</option>
       </select>
-</div>
+
+    </div>
 
     <div class="title" id="displayTitle">Loading…</div>
     <div>
@@ -106,19 +107,11 @@
     }
 
     document.getElementById("newBtn").addEventListener("click", pickRandomChapter);
-});
 
     document.getElementById("copyBtn").addEventListener("click", copyLink);
     document.getElementById("openBtn").addEventListener("click", openLink);
     document.getElementById("version").addEventListener("change", renderCurrent);
 
-    } else {
-        document.getElementById("displayTitle").textContent = "Random verse mode not configured";
-        document.getElementById("displayLink").textContent = "";
-        document.getElementById("displayLink").href = "#";
-        setStatus("Export a verse list to verses.json and wire the loader similarly to chapters.json.");
-      }
-    });
 
     (async () => {
       try {
