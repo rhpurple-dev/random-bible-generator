@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Random Bible Chapter Link</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 40px; max-width: 860px; line-height: 1.35; }
+    .card { border: 1px solid #ddd; border-radius: 16px; padding: 20px; }
+    .title { font-size: 1.25rem; font-weight: 700; margin: 0 0 8px 0; }
+    .meta { color: #555; margin: 0 0 14px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button, select, input {
+      padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; font: inherit;
+    }
+    button { cursor: pointer; }
+    a { word-break: break-all; }
+    .small { font-size: 0.9rem; color: #555; margin-top: 10px; }
+    .status { margin-top: 10px; font-size: 0.9rem; color: #333; }
+  </style>
+</head>
+<body>
+  <h1>Random Bible Chapter Link</h1>
+
+  <div class="card">
+    <p class="meta">Generates a random BibleGateway link. No verse text is stored or shown on this page.</p>
+
+    <div class="row" style="margin-bottom: 14px;">
+      <label for="version"><strong>Version</strong></label>
+      <select id="version">
+        <option value="NIV" selected>NIV</option>
+        <option value="KJV">KJV</option>
+        <option value="ESV">ESV</option>
+        <option value="NASB">NASB</option>
+        <option value="NLT">NLT</option>
+      </select>
+
+      <label for="mode" style="margin-left: 8px;"><strong>Mode</strong></label>
+      <select id="mode">
+        <option value="chapter" selected>Random chapter</option>
+        <option value="verse">Random verse (requires your verse list)</option>
+      </select>
+    </div>
+
+    <div class="title" id="displayTitle">Loading…</div>
+    <div>
+      <a id="displayLink" href="#" target="_blank" rel="noopener noreferrer"></a>
+    </div>
+
+    <div class="row" style="margin-top: 14px;">
+      <button id="newBtn">New</button>
+      <button id="openBtn">Open</button>
+      <button id="copyBtn">Copy link</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="small">
+      Tip: If you want true “random verse” behavior (not chapter), export your verse list to <code>verses.json</code> and switch Mode.
+    </div>
+  </div>
+
+  <script>
+    const BG_BASE = "https://www.biblegateway.com/passage/?search=";
+
+    let chapters = [];
+    let current = null;
+
+    function buildLink(query, version) {
+      const q = encodeURIComponent(query);
+      const v = encodeURIComponent(version);
+      return `${BG_BASE}${q}&version=${v}`;
+    }
+
+    function setStatus(msg) {
+      document.getElementById("status").textContent = msg || "";
+    }
+
+    function renderCurrent() {
+      if (!current) return;
+      const version = document.getElementById("version").value;
+      const url = buildLink(current.query, version);
+
+      document.getElementById("displayTitle").textContent = current.title;
+      const a = document.getElementById("displayLink");
+      a.textContent = url;
+      a.href = url;
+      setStatus("");
+    }
+
+    function pickRandomChapter() {
+      const i = Math.floor(Math.random() * chapters.length);
+      current = chapters[i];
+      renderCurrent();
+    }
+
+    async function copyLink() {
+      const a = document.getElementById("displayLink");
+      const url = a.href;
+      if (!url || url === location.href + "#") return;
+      await navigator.clipboard.writeText(url);
+      setStatus("Copied.");
+    }
+
+    function openLink() {
+      const a = document.getElementById("displayLink");
+      if (a && a.href) window.open(a.href, "_blank", "noopener,noreferrer");
+    }
+
+    async function loadChapters() {
+      const res = await fetch("./chapters.json", { cache: "no-store" });
+      chapters = await res.json();
+      if (!Array.isArray(chapters) || chapters.length === 0) {
+        throw new Error("chapters.json is empty or invalid.");
+      }
+    }
+
+    document.getElementById("newBtn").addEventListener("click", () => {
+      const mode = document.getElementById("mode").value;
+      if (mode !== "chapter") {
+        setStatus("This demo is wired for chapters. To use verses, add verses.json and update the loader.");
+        return;
+      }
+      pickRandomChapter();
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", copyLink);
+    document.getElementById("openBtn").addEventListener("click", openLink);
+    document.getElementById("version").addEventListener("change", renderCurrent);
+
+    document.getElementById("mode").addEventListener("change", () => {
+      const mode = document.getElementById("mode").value;
+      if (mode === "chapter") {
+        pickRandomChapter();
+      } else {
+        document.getElementById("displayTitle").textContent = "Random verse mode not configured";
+        document.getElementById("displayLink").textContent = "";
+        document.getElementById("displayLink").href = "#";
+        setStatus("Export a verse list to verses.json and wire the loader similarly to chapters.json.");
+      }
+    });
+
+    (async () => {
+      try {
+        await loadChapters();
+        pickRandomChapter();
+      } catch (e) {
+        document.getElementById("displayTitle").textContent = "Error loading data";
+        setStatus(e.message);
+      }
+    })();
+  </script>
+</body>
+</html>
