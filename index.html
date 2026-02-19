@@ -5,18 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Random Bible Chapter Generator</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 40px; max-width: 860px; line-height: 1.35; }
-    .card { border: 1px solid #ddd; border-radius: 16px; padding: 20px; }
-    .title { font-size: 1.25rem; font-weight: 700; margin: 0 0 8px 0; }
-    .meta { color: #555; margin: 0 0 14px 0; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button, select, input {
-      padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; font: inherit;
+:root {
+      --bg: #ffffff;
+      --text: #111111;
+      --muted: #555555;
+      --card-bg: #ffffff;
+      --border: #dddddd;
+      --btn-bg: #ffffff;
+      --btn-text: #111111;
+      --btn-border: #cccccc;
+      --shadow: rgba(0, 0, 0, 0.06);
     }
-    button { cursor: pointer; }
-    a { word-break: break-all; }
-    .small { font-size: 0.9rem; color: #555; margin-top: 10px; }
-    .status { margin-top: 10px; font-size: 0.9rem; color: #333; }
+    [data-theme="dark"] {
+      --bg: #0b0c0f;
+      --text: #f2f2f2;
+      --muted: #b8b8b8;
+      --card-bg: #12141a;
+      --border: #2a2f3a;
+      --btn-bg: #12141a;
+      --btn-text: #f2f2f2;
+      --btn-border: #2a2f3a;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, Arial, sans-serif;
+      margin: 40px;
+      max-width: 820px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+    .ref { font-weight: 700; margin-top: 12px; }
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      cursor: pointer;
+    }
+    button:active { transform: translateY(1px); }
+    .row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+    .small { font-size: 0.9rem; color: var(--muted); }
+    .spacer { flex: 1 1 auto; }
   </style>
 </head>
 <body>
@@ -34,13 +72,7 @@
         <option value="NASB">NASB</option>
         <option value="NLT">NLT</option>
       </select>
-
-      <label for="mode" style="margin-left: 8px;"><strong>Mode</strong></label>
-      <select id="mode">
-        <option value="chapter" selected>Random chapter</option>
-        <option value="verse">Random verse (requires your verse list)</option>
-      </select>
-    </div>
+</div>
 
     <div class="title" id="displayTitle">Loading…</div>
     <div>
@@ -48,9 +80,8 @@
     </div>
 
     <div class="row" style="margin-top: 14px;">
-      <button id="newBtn">New</button>
-      <button id="openBtn">Open</button>
-      <button id="copyBtn">Copy link</button>
+      <button id="newBtn" aria-label="New chapter">⟳</button>
+<button id="copyBtn">Copy link</button>
     </div>
 
     <div class="status" id="status"></div>
@@ -60,6 +91,30 @@
     const BG_BASE = "https://www.biblegateway.com/passage/?search=";
 
     let chapters = [];
+
+
+  function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      const btn = document.getElementById("themeBtn");
+      if (btn) btn.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+    }
+
+    function initTheme() {
+      const stored = localStorage.getItem("theme");
+      if (stored === "light" || stored === "dark") {
+        applyTheme(stored);
+        return;
+      }
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(prefersDark ? "dark" : "light");
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem("theme", next);
+      applyTheme(next);
+    }
     let current = null;
 
     function buildLink(query, version) {
@@ -111,32 +166,13 @@
       }
     }
 
-    document.getElementById("newBtn").addEventListener("click", () => {
-      const mode = document.getElementById("mode").value;
-      if (mode !== "chapter") {
-        setStatus("This demo is wired for chapters. To use verses, add verses.json and update the loader.");
-        return;
-      }
-      pickRandomChapter();
-    });
+    document.getElementById("newBtn").addEventListener("click", pickRandomChapter);
 
-    document.getElementById("copyBtn").addEventListener("click", copyLink);
-    document.getElementById("openBtn").addEventListener("click", openLink);
+document.getElementById("copyBtn").addEventListener("click", copyLink);
     document.getElementById("version").addEventListener("change", renderCurrent);
 
-    document.getElementById("mode").addEventListener("change", () => {
-      const mode = document.getElementById("mode").value;
-      if (mode === "chapter") {
-        pickRandomChapter();
-      } else {
-        document.getElementById("displayTitle").textContent = "Random verse mode not configured";
-        document.getElementById("displayLink").textContent = "";
-        document.getElementById("displayLink").href = "#";
-        setStatus("Export a verse list to verses.json and wire the loader similarly to chapters.json.");
-      }
-    });
-
     (async () => {
+      initTheme();
       try {
         await loadChapters();
         pickRandomChapter();
